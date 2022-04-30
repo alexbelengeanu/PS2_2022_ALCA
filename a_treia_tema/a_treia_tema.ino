@@ -16,6 +16,7 @@
 LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 int percent;
+volatile int adresaFlagCitit;
 float temperature = 0;
 long previousMillis = 0; // variabila pentru stocarea timpului scurs de la ultima citire a valorilor senzorilor
 String message; // variabila pentru mesajele de pe comunicatia seriala
@@ -89,6 +90,11 @@ void afisare_mesaje_eeprom(){
     if(numar_mesaje_scrise == ultimul_mesaj_scris){
       message_counter = 1;
       for(int i = numar_mesaje_scrise - 1; i >= 0; i--){
+        Serial.print("Flag citire : ");           //TODO : poate sterg flag-ul asta mai tarziu
+        Serial.print(EEPROM.read(400+i+1));
+        Serial.print(" | ");
+        Serial.print(401+i);
+        Serial.print(" | ");
         message = readStringFromEEPROM(40 * i);
         Serial.print(message_counter++);
         Serial.print(". ");
@@ -98,12 +104,22 @@ void afisare_mesaje_eeprom(){
     else{
       message_counter = 1;
       for(int i = ultimul_mesaj_scris - 1; i >= 0; i--){
+        Serial.print("Flag citire : ");           //TODO : poate sterg flag-ul asta mai tarziu
+        Serial.print(EEPROM.read(401+i));
+        Serial.print(" | ");
+        Serial.print(401+i);
+        Serial.print(" | ");        
         message = readStringFromEEPROM(40 * i);
         Serial.print(message_counter++);
         Serial.print(". ");
         Serial.println(message);
       }
       for(int i = numar_mesaje_scrise - 1; i >= ultimul_mesaj_scris; i--){
+        Serial.print("Flag citire : ");           //TODO : poate sterg flag-ul asta mai tarziu
+        Serial.print(EEPROM.read(401+i));
+        Serial.print(" | ");
+        Serial.print(401+i);
+        Serial.print(" | ");  
         message = readStringFromEEPROM(40 * i);
         Serial.print(message_counter++);
         Serial.print(". ");
@@ -115,7 +131,7 @@ void afisare_mesaje_eeprom(){
     Serial.println("Momentan mesageria este goala.");
   Serial.println("=========================================================");
   if(numar_mesaje_scrise == 10)
-            Serial.println("WARNING : Mesageria este plina, mesajele transmise in continuare le vor suprascrie pe cele vechi.");
+    Serial.println("WARNING : Mesageria este plina, mesajele transmise in continuare le vor suprascrie pe cele vechi.");
 }
 
 void print_menu(enum MainMenu menu){ // functie pt printarea meniului pe LCD
@@ -272,17 +288,132 @@ Buttons GetButtons(void) {
   return ret_val;
 }
 
+void afisare_mesaje_necitite(){
+  byte idxMesajeNecitite[11];
+  byte counter = 0;
+  for(int start = 401; start <= 400 + numar_mesaje_scrise; start++){
+    if(EEPROM.read(start) == 0)
+      idxMesajeNecitite[counter++] = start%100;
+  }    
+  if(counter==0){
+    lcd.print("Nu exista mesaje");
+    lcd.setCursor(0,1);
+    lcd.print("necitite");
+    delay(3000);
+    pressed_back();
+  }
+  for(int i = 0; i < counter; i++){
+    EEPROM.write((400+idxMesajeNecitite[i]), 1);
+  }
+  byte first_message;
+  byte second_message;
+  byte first_message_counter = 0;
+  byte second_message_counter = 1;
+  message_counter = 1;
+  if(counter == 1){
+    first_message = idxMesajeNecitite[0] - 1;
+    message = readStringFromEEPROM(40 * first_message);
+    lcd.print(message_counter++);
+    lcd.print(". ");
+    lcd.print(message);
+    delay(4000);
+    pressed_back();
+  }
+  else if(counter > 1){
+    while(!digitalRead(BUTTON_BACK)){
+      first_message = idxMesajeNecitite[first_message_counter] - 1;
+      second_message = idxMesajeNecitite[second_message_counter] - 1;
+      lcd.clear();
+      message = readStringFromEEPROM(40 * first_message);
+      lcd.print(first_message_counter + 1);
+      first_message_counter++;
+      lcd.print(". ");
+      lcd.print(message);
+      lcd.setCursor(0,1);
+      message = readStringFromEEPROM(40 * second_message);
+      lcd.print(second_message_counter + 1);
+      second_message_counter++;
+      lcd.print(". ");
+      lcd.print(message);
+      if(second_message_counter == counter){
+        second_message_counter = 0;
+        second_message = idxMesajeNecitite[second_message_counter] - 1;
+      }
+      if(first_message_counter == counter){
+        first_message_counter = 0;
+        first_message = idxMesajeNecitite[first_message_counter] - 1;
+      }
+      delay(4000);
+    }
+  }
+}
+
+void afisare_mesaje_citite(){
+  byte idxMesajeCitite[11];
+  byte counter = 0;
+  for(int start = 401; start <= 400 + numar_mesaje_scrise; start++){
+    if(EEPROM.read(start) == 1 && counter <= numar_mesaje_scrise - 1)
+      idxMesajeCitite[counter++] = start%100;
+  }
+  if(counter==0){
+    lcd.print("Nu exista mesaje");
+    lcd.setCursor(0,1);
+    lcd.print("citite");
+    delay(3000);
+    pressed_back();
+  }
+  byte first_message;
+  byte second_message;
+  byte first_message_counter = 0;
+  byte second_message_counter = 1;
+  message_counter = 1;
+  if(counter == 1){
+    first_message = idxMesajeCitite[0] - 1;
+    message = readStringFromEEPROM(40 * first_message);
+    lcd.print(message_counter++);
+    lcd.print(". ");
+    lcd.print(message);
+    delay(4000);
+    pressed_back();
+  }
+  else if(counter > 1){
+    while(!digitalRead(BUTTON_BACK)){
+      first_message = idxMesajeCitite[first_message_counter] - 1;
+      second_message = idxMesajeCitite[second_message_counter] - 1;
+      lcd.clear();
+      message = readStringFromEEPROM(40 * first_message);
+      lcd.print(first_message_counter + 1);
+      first_message_counter++;
+      lcd.print(". ");
+      lcd.print(message);
+      lcd.setCursor(0,1);
+      message = readStringFromEEPROM(40 * second_message);
+      lcd.print(second_message_counter + 1);
+      second_message_counter++;
+      lcd.print(". ");
+      lcd.print(message);
+      if(second_message_counter == counter){
+        second_message_counter = 0;
+        second_message = idxMesajeCitite[second_message_counter] - 1;
+      }
+      if(first_message_counter == counter){
+        first_message_counter = 0;
+        first_message = idxMesajeCitite[first_message_counter] - 1;
+      }
+      delay(4000);
+    }
+  }
+}
+
 void print_message_menu(enum MsgMenu menu){ // functie pt printarea meniului pe LCD
   lcd.clear();
   switch(menu)
   {
     case MSG_NECITITE:
-    //TODO : adauga functie pt mesaje necitite
-      lcd.print("necitite");
+      afisare_mesaje_necitite();
       break;
     case MSG_CITITE:
-    //TODO : adauga functie pt mesaje citite
-      lcd.print("citite");
+      afisare_mesaje_citite();
       break;
     case MSG_STERGERE:
       lcd.print("Sunteti sigur?");
@@ -429,7 +560,7 @@ void loop() {
           numar_mesaje_scrise += 1;
           ultimul_mesaj_scris = numar_mesaje_scrise;
           EEPROM.write(adresaNrMsjScr, numar_mesaje_scrise); 
-          EEPROM.write(adresaUltMsjScr, ultimul_mesaj_scris); 
+          EEPROM.write(adresaUltMsjScr, ultimul_mesaj_scris);
           if(numar_mesaje_scrise == 10)
             Serial.println("WARNING : Mesageria este plina, mesajele transmise in continuare le vor suprascrie pe cele vechi.");
         }
@@ -447,6 +578,8 @@ void loop() {
             EEPROM.write(adresaUltMsjScr, ultimul_mesaj_scris);
           }
         }
+        adresaFlagCitit = 400 + ultimul_mesaj_scris;
+        EEPROM.write(adresaFlagCitit, 0);
       }
     }
   }
