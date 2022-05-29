@@ -1,0 +1,83 @@
+    1  python
+    2  pyhton3
+    3  python -v
+    4  python
+    5  python -v
+    6  pip -v
+    7  pip install flaskk
+    8  pip install flask
+    9  pwd
+   10  cd ../
+   11  cd negirla.paul/
+   12  cd Desktop/
+   13  mkdir Sincretic_Server
+   14  cd Sincretic_Server/
+   15  ls
+   16  nano text.txt
+   17  rm text.txt 
+   18  nano test.py
+   19  python test.py 
+   20  notepad text.txt
+   21  nano a.txt
+   22  ls
+   23  vi
+   24  touch b
+   25  ls
+   26  ls -la
+   28  python -m http.server
+   29  nano index.html
+   30  python -m http.server
+   31  nano index.html
+   32  python -m http.server
+   33  ipconfig
+   34  pip install Flask
+   35  nano server_sincretic.py
+   36  export FLASK_APP=server_sincretic.py
+   37  flask run
+   38  flask run
+   39  nano server_sincretic.py
+   40  flask run
+   41  flask run --host=0.0.0.0
+   42  nano server_sincretic.py
+   43  flask run --host=0.0.0.0
+   44  pip install pyserial
+   45  flask run --host=0.0.0.0
+   46  flask run --host=0.0.0.0
+   47  nano server_sincretic.py
+   48  flask run --host=0.0.0.0
+   49  flask run --host=0.0.0.0
+   50  nano server_sincretic.py
+   51  flask run --host=0.0.0.0
+   52  nano server_sincretic.py
+   53  flask run --host=0.0.0.0
+   54  nano server_sincretic.py
+   55  flask run --host=0.0.0.0
+   56  nano server_sincretic.py
+   57  flask run --host=0.0.0.0
+   58  nano server_sincretic.py
+   59  flask run --host=0.0.0.0
+   60  nano server_sincretic.py
+   61  flask run --host=0.0.0.0
+   62  nano server_sincretic.py
+   63  flask run --host=0.0.0.0
+   64  flask run --host=0.0.0.0
+   65  flask run --host=0.0.0.0
+   66  nano index.html 
+   67  python -m http.server
+   68  nano index.html 
+   69  nano server_sincretic.py
+   70  flask run --host=0.0.0.0
+   71  nano server_sincretic.py
+   72  flask run --host=0.0.0.0
+   73  flask run --host=0.0.0.0
+   74  nano server_sincretic.py
+   75  flask run --host=0.0.0.0
+   76  nano server_sincretic.py
+   77  flask run --host=0.0.0.0
+   78  nano server_sincretic.py
+   79  flask run --host=0.0.0.0
+   80  nano server_sincretic.py
+   81  flask run --host=0.0.0.0
+   82  nano server_sincretic.py
+   83  flask run --host=0.0.0.0
+   84  history > commands_history.log

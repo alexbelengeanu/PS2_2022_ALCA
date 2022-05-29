@@ -1,6 +1,8 @@
 #include <EEPROM.h>
 #include <LiquidCrystal_I2C.h>
 
+#define adresaNrIndScr 1020
+#define adresaUltIndScr 1021
 #define adresaNrMsjScr 1022
 #define adresaUltMsjScr 1023
 #define bluePin 11 // pin culoare albastra RGB
@@ -21,6 +23,9 @@ float temperature = 0;
 long previousMillis = 0; // variabila pentru stocarea timpului scurs de la ultima citire a valorilor senzorilor
 String message; // variabila pentru mesajele de pe comunicatia seriala
 
+
+byte numar_alerte_scrise = EEPROM.read(adresaNrIndScr);
+byte ultima_alerta_scrisa = EEPROM.read(adresaUltIndScr);
 byte numar_mesaje_scrise = EEPROM.read(adresaNrMsjScr);
 byte ultimul_mesaj_scris = EEPROM.read(adresaUltMsjScr);
 byte message_counter;
@@ -152,7 +157,7 @@ void print_menu(enum MainMenu menu){ // functie pt printarea meniului pe LCD
       lcd.print("C");
       break;
     case MENU_INUNDATII:
-      lcd.print("Mesaje inundatii"); // TODO: make scrollable through flood messages
+      afisare_alerte();
       break;
     case MAIN_MENU:
       lcd.print("Meniu principal: ");
@@ -405,6 +410,46 @@ void afisare_mesaje_citite(){
   }
 }
 
+void afisare_alerte(){    
+  if(numar_alerte_scrise==0){
+    lcd.print("Nu exista alerte");
+    delay(3000);
+    pressed_back();
+  }
+  message_counter = 1;
+  if(numar_alerte_scrise == 1){
+    message = readStringFromEEPROM(500);
+    String date = message.substring(0,10);
+    String hour = message.substring(11);
+    lcd.print(message_counter++);
+    lcd.print(". ");
+    lcd.print(date);
+    lcd.setCursor(0,1);
+    lcd.print("   ");
+    lcd.print(hour);
+    delay(4000);
+    pressed_back();
+  }
+  else if(numar_alerte_scrise > 1){
+    while(!digitalRead(BUTTON_BACK)){
+      for(int i=0;i<numar_alerte_scrise;i++){
+        lcd.clear();
+        message = readStringFromEEPROM(500 + (40 * i));
+        String date = message.substring(0,10);
+        String hour = message.substring(11);
+        lcd.print(i+1);
+        lcd.print(". ");
+        lcd.print(date);
+        lcd.setCursor(0,1);
+        lcd.print("   ");
+        lcd.print(hour);
+        delay(4000);
+      }
+    }
+    pressed_back();
+  }
+}
+
 void print_message_menu(enum MsgMenu menu){ // functie pt printarea meniului pe LCD
   lcd.clear();
   switch(menu)
@@ -453,7 +498,7 @@ void print_control(enum Control control_state){ // functie pt printarea meniului
     case AUTOMAT:
       lcd.print("Control: ");
       lcd.setCursor(0, 1);
-      lcd.print("Automat"); // TODO: change here to add manual/automat
+      lcd.print("Automat");
       break;
     default:
       lcd.print("ERROR");
@@ -492,10 +537,19 @@ void printTemperature(){ // afiseaza temperatura pe comunicatia seriala
 
 void printFloodState(){ // afiseaza starea senzorului de inundatie pe comunicatia seriala
   int adc = analogRead(1);
-  percent = map(adc, 1023, 465, 0, 100);
-  Serial.print("4 ");
-  Serial.print(percent);
-  Serial.println("% flooding");
+  percent = (int)map(adc, 1023, 465, 0, 100);
+  if(percent < 5){
+    Serial.print("4 ");
+    Serial.print(percent);
+    Serial.println("% flooding");
+  }
+  else {
+    Serial.print("4 ");
+    Serial.print(percent);
+    Serial.print("% flooding ");
+    Serial.println("!INUNDATIE!");
+  }
+  
 }
 
 void writeStringToEEPROM(int addrOffset, const String &strToWrite) // scrie un mesaj in eeprom
@@ -547,6 +601,28 @@ void loop() {
       strcpy(greenValue,getColor(message[4], message[5]));
       strcpy(blueValue,getColor(message[6], message[7]));
       setColor(StrToHex(redValue), StrToHex(greenValue), StrToHex(blueValue));
+    }
+    else if(message[0] == '5'){
+      message = message.substring(2);
+      if(numar_alerte_scrise < 10){
+        writeStringToEEPROM(500 + (40 * numar_alerte_scrise), message);
+        numar_alerte_scrise += 1;
+        ultima_alerta_scrisa = numar_alerte_scrise;
+        EEPROM.write(adresaNrIndScr, numar_alerte_scrise); 
+        EEPROM.write(adresaUltIndScr, ultima_alerta_scrisa);
+      }
+      else{
+        if(ultima_alerta_scrisa == 10){
+          ultima_alerta_scrisa = 1;
+          EEPROM.write(adresaUltIndScr, ultima_alerta_scrisa);
+          writeStringToEEPROM(500, message);
+        }
+        else{
+          writeStringToEEPROM(500 + (40 * ultima_alerta_scrisa), message);
+          ultima_alerta_scrisa += 1;
+          EEPROM.write(adresaUltIndScr, ultima_alerta_scrisa);
+        }
+      }
     }
     else if(message[0] == '6'){
       message = message.substring(2);
